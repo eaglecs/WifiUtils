@@ -1,12 +1,14 @@
 package com.thanosfisherman.wifiutils.sample
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.thanosfisherman.wifiutils.WifiUtils
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionSuccessListener
@@ -14,17 +16,28 @@ import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionSuccessListener
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveErrorCode
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveSuccessListener
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
     private val SSID = "MAIKA-D9DF"
     private val PASSWORD = ""
+    private var isConnectedToInternet = false
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 555)
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET,
+                Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE), 555)
+        ReactiveNetwork.observeInternetConnectivity()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { isConnectedToInternet ->
+                    this.isConnectedToInternet = isConnectedToInternet
+                }
         WifiUtils.forwardLog { _, tag, message ->
             val customTag = "${tag}.${this::class.simpleName}"
             Log.i(customTag, message)
@@ -36,12 +49,22 @@ class MainActivity : AppCompatActivity() {
         button_disconnect.setOnClickListener { disconnect(applicationContext) }
         button_remove.setOnClickListener { remove(applicationContext) }
         button_check.setOnClickListener { check(applicationContext) }
+        button_check_internet.setOnClickListener { checkInternet(applicationContext) }
+
+    }
+
+    private fun checkInternet(context: Context){
+        if (isConnectedToInternet){
+            Toast.makeText(context, "has internet!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "no internet!", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun connectWithWpa(context: Context) {
         WifiUtils.withContext(context)
                 .connectWith(SSID, PASSWORD)
-                .setTimeout(15000)
+                .setTimeout(40000)
                 .onConnectionResult(object : ConnectionSuccessListener {
                     override fun success() {
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
