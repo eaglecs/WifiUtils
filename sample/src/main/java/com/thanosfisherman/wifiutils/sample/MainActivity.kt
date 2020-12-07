@@ -1,14 +1,12 @@
 package com.thanosfisherman.wifiutils.sample
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
 import com.thanosfisherman.wifiutils.WifiUtils
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionSuccessListener
@@ -16,8 +14,6 @@ import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionSuccessListener
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveErrorCode
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveSuccessListener
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -32,12 +28,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET,
                 Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE), 555)
-        ReactiveNetwork.observeInternetConnectivity()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe { isConnectedToInternet ->
-                    this.isConnectedToInternet = isConnectedToInternet
-                }
+//        ReactiveNetwork.observeInternetConnectivity()
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe { isConnectedToInternet ->
+//                    this.isConnectedToInternet = isConnectedToInternet
+//                }
         WifiUtils.forwardLog { _, tag, message ->
             val customTag = "${tag}.${this::class.simpleName}"
             Log.i(customTag, message)

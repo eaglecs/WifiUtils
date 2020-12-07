@@ -19,7 +19,7 @@ private object LibraryVersion {
     const val coilVersion = "0.11.0"
     const val progressButtonVersion = "2.1.0"
     const val flowBindingsVersion = "0.12.0"
-    const val reactivenetwork_version = "3.0.8"
+//    const val reactivenetwork_version = "3.0.8"
 
 }
 
@@ -62,7 +62,7 @@ object AppDependency {
     const val progressButton = "com.github.razir.progressbutton:progressbutton:${LibraryVersion.progressButtonVersion}"
     const val kotlin = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${CoreVersion.KOTLIN}"
     const val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect:${CoreVersion.KOTLIN}"
-    const val reactivenetwork = "com.github.pwittchen:reactivenetwork-rx2:${LibraryVersion.reactivenetwork_version}"
+//    const val reactivenetwork = "com.github.pwittchen:reactivenetwork-rx2:${LibraryVersion.reactivenetwork_version}"
 
 
     fun getAll() = AppDependency::class.memberProperties
