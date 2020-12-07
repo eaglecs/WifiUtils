@@ -67,8 +67,12 @@ public final class ConnectorUtils {
     }
 
     public static boolean isAlreadyConnected(@Nullable WifiManager wifiManager, @Nullable ConnectivityManager connectivityManager, @Nullable String ssid) {
-
-        boolean result = isAlreadyConnected(connectivityManager);
+        boolean result ;
+        if (VersionUtils.isAndroidQOrLater()){
+            result = true;
+        } else {
+            result = isAlreadyConnected(connectivityManager);
+        }
 
         if (result) {
             if (ssid != null && wifiManager != null) {
