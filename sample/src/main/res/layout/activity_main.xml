@@ -37,10 +37,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/connect"
-        app:layout_constraintBottom_toTopOf="@id/button_disconnect"
+        app:layout_constraintBottom_toTopOf="@id/button_connect_without_scan"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@id/textview_password" />
+
+    <Button
+        android:layout_marginTop="30dp"
+        android:id="@+id/button_connect_without_scan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect Without SCAN"
+        app:layout_constraintBottom_toTopOf="@id/button_disconnect"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/button_connect" />
 
     <Button
         android:layout_marginTop="30dp"

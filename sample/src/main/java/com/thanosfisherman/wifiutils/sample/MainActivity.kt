@@ -2,6 +2,7 @@ package com.thanosfisherman.wifiutils.sample
 
 import android.Manifest
 import android.content.Context
+import android.net.wifi.ScanResult
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -18,8 +19,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    private val SSID = "MAIKA-D9DF"
-    private val PASSWORD = ""
+    private val SSID = "OLLI-Public"
+    private val PASSWORD = "olli-ai2020"
     private var isConnectedToInternet = false
 
 
@@ -42,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         textview_ssid.text = SSID
         textview_password.text = PASSWORD
         button_connect.setOnClickListener { connectWithWpa(applicationContext) }
+        button_connect_without_scan.setOnClickListener { connectWithWpaWithoutScan(applicationContext) }
         button_disconnect.setOnClickListener { disconnect(applicationContext) }
         button_remove.setOnClickListener { remove(applicationContext) }
         button_check.setOnClickListener { check(applicationContext) }
@@ -62,7 +64,33 @@ class MainActivity : AppCompatActivity() {
                 .connectWith(SSID, PASSWORD)
                 .setTimeout(40000)
                 .onConnectionResult(object : ConnectionSuccessListener {
-                    override fun success() {
+//                    override fun success() {
+//                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
+//                    }
+
+                    override fun failed(errorCode: ConnectionErrorCode) {
+                        Toast.makeText(context, "EPIC FAIL!$errorCode", Toast.LENGTH_SHORT).show()
+                    }
+
+                    override fun success(mSingleScanResult: ScanResult) {
+                        scanResult = mSingleScanResult
+                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
+                    }
+                })
+                .start()
+    }
+
+    private var scanResult: ScanResult? = null
+
+    private fun connectWithWpaWithoutScan(context: Context) {
+        WifiUtils.withContext(context)
+                .connectWith(SSID, PASSWORD)
+                .setTimeout(40000)
+                .onConnectionResult(object : ConnectionSuccessListener {
+//                    override fun success() {
+//                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
+//                    }
+                    override fun success(mSingleScanResult: ScanResult) {
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
                     }
 
@@ -70,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(context, "EPIC FAIL!$errorCode", Toast.LENGTH_SHORT).show()
                     }
                 })
-                .start()
+                .startWithoutScan(scanResult)
     }
 
     private fun disconnect(context: Context) {

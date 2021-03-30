@@ -1,5 +1,6 @@
 package com.thanosfisherman.wifiutils;
 
+import android.net.wifi.ScanResult;
 import android.os.Build;
 
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionScanResultsListener;
@@ -16,6 +17,7 @@ import androidx.annotation.RequiresApi;
 
 public interface WifiConnectorBuilder {
     void start();
+    void startWithoutScan(ScanResult scanResult);
 
     interface WifiUtilsBuilder {
         void enableWifi(WifiStateListener wifiStateListener);

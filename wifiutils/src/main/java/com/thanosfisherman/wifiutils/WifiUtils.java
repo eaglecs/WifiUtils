@@ -33,6 +33,7 @@ import com.thanosfisherman.wifiutils.wifiState.WifiStateReceiver;
 import com.thanosfisherman.wifiutils.wifiWps.ConnectionWpsListener;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.thanosfisherman.elvis.Elvis.of;
@@ -56,6 +57,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
         WifiConnectorBuilder.WifiSuccessListener,
         WifiConnectorBuilder.WifiWpsSuccessListener {
     private static final String TAG = WifiUtils.class.getSimpleName();
+    private Boolean isScanWifi = true;
 
     @Nullable
     private final WifiManager mWifiManager;
@@ -104,18 +106,34 @@ public final class WifiUtils implements WifiConnectorBuilder,
             wifiLog("WIFI ENABLED...");
             unregisterReceiver(mContext, mWifiStateReceiver);
             of(mWifiStateListener).ifPresent(stateListener -> stateListener.isSuccess(true));
-
-            if (mScanResultsListener != null || mPassword != null) {
-                wifiLog("START SCANNING....");
-                if (mWifiManager.startScan()) {
-                    registerReceiver(mContext, mWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+            if (isScanWifi){
+                if (mScanResultsListener != null || mPassword != null) {
+                    wifiLog("START SCANNING....");
+                    if (mWifiManager.startScan()) {
+                        registerReceiver(mContext, mWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+                    } else {
+                        of(mScanResultsListener).ifPresent(resultsListener -> resultsListener.onScanResults(new ArrayList<>()));
+                        of(mConnectionWpsListener).ifPresent(wpsListener -> wpsListener.isSuccessful(false));
+                        mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_SCAN);
+                        wifiLog("ERROR COULDN'T SCAN");
+                    }
+                }
+            } else {
+                if (mSingleScanResult != null){
+                    if (connectToWifi(mContext, mWifiManager, mConnectivityManager, mHandler, mSingleScanResult, mPassword, mWifiConnectionCallback)) {
+                        registerReceiver(mContext, (mWifiConnectionReceiver).connectWith(mSingleScanResult, mPassword, mConnectivityManager),
+                                new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
+                        registerReceiver(mContext, mWifiConnectionReceiver,
+                                new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
+                        mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
+                    } else {
+                        mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
+                    }
                 } else {
-                    of(mScanResultsListener).ifPresent(resultsListener -> resultsListener.onScanResults(new ArrayList<>()));
-                    of(mConnectionWpsListener).ifPresent(wpsListener -> wpsListener.isSuccessful(false));
-                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_SCAN);
-                    wifiLog("ERROR COULDN'T SCAN");
+                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                 }
             }
+
         }
     };
 
@@ -127,6 +145,15 @@ public final class WifiUtils implements WifiConnectorBuilder,
             unregisterReceiver(mContext, mWifiScanReceiver);
 
             final List<ScanResult> scanResultList = mWifiManager.getScanResults();
+            if (BuildConfig.DEBUG){
+                if (scanResultList.isEmpty()){
+                    wifiLog( "List wifi isEmpty ");
+                } else {
+                    for (Iterator<ScanResult> i = scanResultList.iterator(); i.hasNext();) {
+                        wifiLog( "Wifi - " + i.next().SSID);
+                    }
+                }
+            }
             of(mScanResultsListener).ifPresent(resultsListener -> resultsListener.onScanResults(scanResultList));
             of(mConnectionScanResultsListener).ifPresent(connectionResultsListener -> mSingleScanResult = connectionResultsListener.onConnectWithScanResult(scanResultList));
 
@@ -175,7 +202,10 @@ public final class WifiUtils implements WifiConnectorBuilder,
             mTimeoutHandler.stopTimeout();
 
             //reenableAllHotspots(mWifiManager);
-            of(mConnectionSuccessListener).ifPresent(ConnectionSuccessListener::success);
+//            of(mConnectionSuccessListener).ifPresent(ConnectionSuccessListener::success);
+            of(mConnectionSuccessListener).ifPresent( successListener -> {
+                successListener.success(mSingleScanResult);
+            });
         }
 
         @Override
@@ -407,6 +437,17 @@ public final class WifiUtils implements WifiConnectorBuilder,
 
     @Override
     public void start() {
+        isScanWifi = true;
+        unregisterReceiver(mContext, mWifiStateReceiver);
+        unregisterReceiver(mContext, mWifiScanReceiver);
+        unregisterReceiver(mContext, mWifiConnectionReceiver);
+        enableWifi(null);
+    }
+
+    @Override
+    public void startWithoutScan(ScanResult scanResult) {
+        isScanWifi = false;
+        mSingleScanResult =  scanResult;
         unregisterReceiver(mContext, mWifiStateReceiver);
         unregisterReceiver(mContext, mWifiScanReceiver);
         unregisterReceiver(mContext, mWifiConnectionReceiver);
