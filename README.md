@@ -63,7 +63,7 @@ Now lets get to the interesting stuff. You can connect to any WiFi network progr
           .setTimeout(40000)
           .onConnectionResult(new ConnectionSuccessListener() {
               @Override
-              public void success() {
+              public void success(ScanResult mScanResult) {
                   Toast.makeText(MainActivity.this, "SUCCESS!", Toast.LENGTH_SHORT).show();
               }
 
@@ -75,13 +75,31 @@ Now lets get to the interesting stuff. You can connect to any WiFi network progr
           .start();
 ```
 
+```java
+  WifiUtils.withContext(getApplicationContext())
+          .connectWith("JohnDoeWiFi", "JohnDoePassword")
+          .setTimeout(40000)
+          .onConnectionResult(new ConnectionSuccessListener() {
+              @Override
+              public void success(ScanResult mScanResult) {
+                  Toast.makeText(MainActivity.this, "SUCCESS!", Toast.LENGTH_SHORT).show();
+              }
+
+              @Override
+              public void failed(@NonNull ConnectionErrorCode errorCode) {
+                  Toast.makeText(MainActivity.this, "EPIC FAIL!" + errorCode.toString(), Toast.LENGTH_SHORT).show();
+              }
+          })
+          .startWithoutScan(mScanResult);
+```
+
 There are also a few other options that would allow you to do the same job but first 
 let's move the `ConnectionSuccessListener` from above into its own separate field named `successListener` so that we can save some space
 
 ```java
     private ConnectionSuccessListener successListener = new ConnectionSuccessListener() {
         @Override
-        public void success() {
+        public void success(ScanResult mScanResult) {
             Toast.makeText(MainActivity.this, "SUCCESS!", Toast.LENGTH_SHORT).show();
         }
 
