@@ -15,15 +15,35 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    signingConfigs {
+//        getByName("debug") {
+//            storeFile = file("debug.keystore")
+//            storePassword = "android"
+//            keyAlias = "androiddebugkey"
+//            keyPassword = "android"
+//        }
+
+//        getByName("release") {
+//            storeFile = file("release.jks")
+//            storePassword = "123456a@A"
+//            keyAlias = "wifi_util"
+//            keyPassword = "123456a@A"
+//        }
+    }
+
     buildTypes {
 
         getByName(BuildType.DEBUG) {
+            applicationIdSuffix = ".debug"
+//            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = BuildTypeDebug.isMinifyEnabled
             isShrinkResources = BuildTypeDebug.isShrinkResources
             isDebuggable = BuildTypeDebug.isDebuggable
         }
 
         getByName(BuildType.RELEASE) {
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = BuildTypeRelease.isMinifyEnabled
             isShrinkResources = BuildTypeRelease.isShrinkResources
             isDebuggable = BuildTypeRelease.isDebuggable
