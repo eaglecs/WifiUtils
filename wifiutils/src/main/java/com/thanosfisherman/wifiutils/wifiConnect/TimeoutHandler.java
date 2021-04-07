@@ -9,6 +9,7 @@ import com.thanosfisherman.wifiutils.WeakHandler;
 
 import static com.thanosfisherman.elvis.Elvis.of;
 import static com.thanosfisherman.wifiutils.ConnectorUtils.isAlreadyConnected;
+import static com.thanosfisherman.wifiutils.ConnectorUtils.isAlreadyConnectedSSID;
 import static com.thanosfisherman.wifiutils.ConnectorUtils.reEnableNetworkIfPossible;
 import static com.thanosfisherman.wifiutils.WifiUtils.wifiLog;
 import static com.thanosfisherman.wifiutils.utils.VersionUtils.isAndroidQOrLater;
@@ -18,20 +19,34 @@ public class TimeoutHandler {
     private final WeakHandler mHandler;
     private final WifiConnectionCallback mWifiConnectionCallback;
     private ScanResult mScanResult;
+    private String mSsid;
 
     private final Runnable timeoutCallback = new Runnable() {
         @Override
         public void run() {
             wifiLog("Connection Timed out...");
 
-            if (!isAndroidQOrLater()) {
-                reEnableNetworkIfPossible(mWifiManager, mScanResult);
+            if (mScanResult != null){
+                if (!isAndroidQOrLater()) {
+                    reEnableNetworkIfPossible(mWifiManager, mScanResult);
+                }
+                if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
+                    mWifiConnectionCallback.successfulConnect();
+                } else {
+                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
+                }
+            } else  {
+                if (!isAndroidQOrLater()) {
+                    reEnableNetworkIfPossible(mWifiManager, mSsid);
+                }
+                if (isAlreadyConnectedSSID(mWifiManager, mSsid)) {
+                    mWifiConnectionCallback.successfulConnect();
+                } else {
+                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
+                }
             }
-            if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
-                mWifiConnectionCallback.successfulConnect();
-            } else {
-                mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
-            }
+
+
 
             mHandler.removeCallbacks(this);
         }
@@ -48,6 +63,13 @@ public class TimeoutHandler {
         mHandler.removeCallbacks(timeoutCallback);
 
         mScanResult = scanResult;
+        mHandler.postDelayed(timeoutCallback, timeout);
+    }
+
+    public void startTimeout(final String ssid, final long timeout) {
+        // cleanup previous connection timeout handler
+        mHandler.removeCallbacks(timeoutCallback);
+        mSsid = ssid;
         mHandler.postDelayed(timeoutCallback, timeout);
     }
 

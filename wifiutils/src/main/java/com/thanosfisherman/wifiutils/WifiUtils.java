@@ -130,7 +130,15 @@ public final class WifiUtils implements WifiConnectorBuilder,
                         mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                     }
                 } else {
-                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
+                    if (connectToWifi(mContext, mWifiManager, mConnectivityManager, mHandler, mSsid, mPassword, mWifiConnectionCallback)) {
+                        registerReceiver(mContext, (mWifiConnectionReceiver).connectWith(mSsid, mPassword, mConnectivityManager),
+                                new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
+                        registerReceiver(mContext, mWifiConnectionReceiver,
+                                new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
+                        mTimeoutHandler.startTimeout(mSsid, mTimeoutMillis);
+                    } else {
+                        mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
+                    }
                 }
             }
 
@@ -210,6 +218,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
 
         @Override
         public void errorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
+            wifiLog("ConnectionErrorCode " + connectionErrorCode);
             unregisterReceiver(mContext, mWifiConnectionReceiver);
             mTimeoutHandler.stopTimeout();
             if (isAndroidQOrLater()) {
@@ -340,6 +349,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
         }
 
         if (isAndroidQOrLater()) {
+            DisconnectCallbackHolder.getInstance().unbindProcessFromNetwork();
             DisconnectCallbackHolder.getInstance().disconnect();
             removeSuccessListener.success();
         } else {
@@ -448,6 +458,15 @@ public final class WifiUtils implements WifiConnectorBuilder,
     public void startWithoutScan(ScanResult scanResult) {
         isScanWifi = false;
         mSingleScanResult =  scanResult;
+        unregisterReceiver(mContext, mWifiStateReceiver);
+        unregisterReceiver(mContext, mWifiScanReceiver);
+        unregisterReceiver(mContext, mWifiConnectionReceiver);
+        enableWifi(null);
+    }
+
+    @Override
+    public void startWithoutScan() {
+        isScanWifi = false;
         unregisterReceiver(mContext, mWifiStateReceiver);
         unregisterReceiver(mContext, mWifiScanReceiver);
         unregisterReceiver(mContext, mWifiConnectionReceiver);

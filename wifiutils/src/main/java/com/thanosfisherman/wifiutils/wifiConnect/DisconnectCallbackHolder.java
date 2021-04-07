@@ -68,10 +68,12 @@ public class DisconnectCallbackHolder {
      */
     public void disconnect() {
         if (mNetworkCallback != null && mConnectivityManager != null) {
-            wifiLog("Disconnecting on Android 10+");
             mConnectivityManager.unregisterNetworkCallback(mNetworkCallback);
             mNetworkCallback = null;
             isNetworkcallbackAdded = false;
+            wifiLog("Disconnecting on Android 10+ success");
+        } else {
+            wifiLog("Disconnecting on Android 10+ error: mNetworkCallback = null; mConnectivityManager = null");
         }
     }
 

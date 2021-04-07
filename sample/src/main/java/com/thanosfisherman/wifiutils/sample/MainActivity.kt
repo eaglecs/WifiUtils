@@ -17,10 +17,18 @@ import com.thanosfisherman.wifiutils.wifiRemove.RemoveErrorCode
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveSuccessListener
 import kotlinx.android.synthetic.main.activity_main.*
 
+
 class MainActivity : AppCompatActivity() {
 
-    private val SSID = "OLLI-Public"
-    private val PASSWORD = "olli-ai2020"
+//    private val SSID = "OLLI-Public"
+//    private val PASSWORD = "olli-ai2020"
+
+//    private val SSID = "MAIKA-9683"
+//    private val PASSWORD = ""
+
+    private val SSID = "smarthome"
+    private val PASSWORD = "a1234567890"
+
     private var isConnectedToInternet = false
 
 
@@ -29,12 +37,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET,
                 Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE), 555)
-//        ReactiveNetwork.observeInternetConnectivity()
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe { isConnectedToInternet ->
-//                    this.isConnectedToInternet = isConnectedToInternet
-//                }
         WifiUtils.forwardLog { _, tag, message ->
             val customTag = "${tag}.${this::class.simpleName}"
             Log.i(customTag, message)
@@ -51,6 +53,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+
     private fun checkInternet(context: Context){
         if (isConnectedToInternet){
             Toast.makeText(context, "has internet!", Toast.LENGTH_SHORT).show()
@@ -64,15 +67,11 @@ class MainActivity : AppCompatActivity() {
                 .connectWith(SSID, PASSWORD)
                 .setTimeout(40000)
                 .onConnectionResult(object : ConnectionSuccessListener {
-//                    override fun success() {
-//                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
-//                    }
-
                     override fun failed(errorCode: ConnectionErrorCode) {
                         Toast.makeText(context, "EPIC FAIL!$errorCode", Toast.LENGTH_SHORT).show()
                     }
 
-                    override fun success(mScanResult: ScanResult) {
+                    override fun success(mScanResult: ScanResult?) {
                         scanResult = mScanResult
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
                     }
@@ -87,10 +86,10 @@ class MainActivity : AppCompatActivity() {
                 .connectWith(SSID, PASSWORD)
                 .setTimeout(40000)
                 .onConnectionResult(object : ConnectionSuccessListener {
-//                    override fun success() {
+                    //                    override fun success() {
 //                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
 //                    }
-                    override fun success(mScanResult: ScanResult) {
+                    override fun success(mScanResult: ScanResult?) {
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
                     }
 
@@ -98,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(context, "EPIC FAIL!$errorCode", Toast.LENGTH_SHORT).show()
                     }
                 })
-                .startWithoutScan(scanResult)
+                .startWithoutScan()
     }
 
     private fun disconnect(context: Context) {

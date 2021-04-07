@@ -19,6 +19,7 @@ import android.net.wifi.WifiNetworkSpecifier;
 import android.net.wifi.WpsInfo;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,10 +51,29 @@ public final class ConnectorUtils {
     private static final int MAX_PRIORITY = 99999;
 
     public static boolean isAlreadyConnected(@Nullable WifiManager wifiManager, @Nullable String bssid) {
-        if (bssid != null && wifiManager != null) {
-            if (wifiManager.getConnectionInfo() != null && wifiManager.getConnectionInfo().getBSSID() != null &&
-                    wifiManager.getConnectionInfo().getIpAddress() != 0 &&
-                    Objects.equals(bssid, wifiManager.getConnectionInfo().getBSSID())) {
+        if (bssid != null && wifiManager != null && wifiManager.getConnectionInfo() != null) {
+            String bssidWifi = wifiManager.getConnectionInfo().getBSSID();
+            int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
+            String ssidWifi = wifiManager.getConnectionInfo().getSSID().replace("\"", "");
+            Log.d("duc_anh", "BSSID = " + bssidWifi + "; " + "ipAddress = " + ipAddress + "; " + "ssidWifi = " + ssidWifi + "; ");
+            if (bssidWifi != null &&
+                    ipAddress != 0 &&
+                    Objects.equals(bssid, bssidWifi)) {
+                wifiLog("Already connected to: " + wifiManager.getConnectionInfo().getSSID() + "  BSSID: " + wifiManager.getConnectionInfo().getBSSID());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isAlreadyConnectedSSID(@Nullable WifiManager wifiManager, @Nullable String ssid) {
+        if (ssid != null && wifiManager != null && wifiManager.getConnectionInfo() != null) {
+            String bssid = wifiManager.getConnectionInfo().getBSSID();
+            int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
+            String ssidWifi = wifiManager.getConnectionInfo().getSSID().replace("\"", "");
+            boolean isHiddenSSID = wifiManager.getConnectionInfo().getHiddenSSID();
+            wifiLog("Check Already Connected: BSSID = " + bssid + "; " + "ipAddress = " + ipAddress + "; " + "ssidWifi = " + ssidWifi + "; ");
+            if (bssid != null && ipAddress != 0 && (isHiddenSSID || Objects.equals(ssid, ssidWifi))) {
                 wifiLog("Already connected to: " + wifiManager.getConnectionInfo().getSSID() + "  BSSID: " + wifiManager.getConnectionInfo().getBSSID());
                 return true;
             }
@@ -67,8 +87,8 @@ public final class ConnectorUtils {
     }
 
     public static boolean isAlreadyConnected(@Nullable WifiManager wifiManager, @Nullable ConnectivityManager connectivityManager, @Nullable String ssid) {
-        boolean result ;
-        if (VersionUtils.isAndroidQOrLater()){
+        boolean result;
+        if (VersionUtils.isAndroidQOrLater()) {
             result = true;
         } else {
             result = isAlreadyConnected(connectivityManager);
@@ -218,6 +238,19 @@ public final class ConnectorUtils {
     }
 
     @RequiresPermission(allOf = {ACCESS_FINE_LOCATION, ACCESS_WIFI_STATE})
+    static boolean connectToWifi(@NonNull final Context context, @Nullable final WifiManager wifiManager, @Nullable final ConnectivityManager connectivityManager, @NonNull WeakHandler handler, @NonNull final String mSsid, @NonNull final String password, @NonNull WifiConnectionCallback wifiConnectionCallback) {
+        if (wifiManager == null || connectivityManager == null) {
+            return false;
+        }
+
+        if (isAndroidQOrLater()) {
+            return connectAndroidQ(wifiManager, connectivityManager, handler, wifiConnectionCallback, mSsid, password);
+        }
+
+        return connectPreAndroidQ(context, wifiManager, mSsid, password);
+    }
+
+    @RequiresPermission(allOf = {ACCESS_FINE_LOCATION, ACCESS_WIFI_STATE})
     private static boolean connectPreAndroidQ(@NonNull final Context context, @Nullable final WifiManager wifiManager, @NonNull final ScanResult scanResult, @NonNull final String password) {
         if (wifiManager == null) {
             return false;
@@ -244,6 +277,51 @@ public final class ConnectorUtils {
         config.SSID = convertToQuotedString(scanResult.SSID);
         config.BSSID = scanResult.BSSID;
         ConfigSecurities.setupSecurity(config, security, password);
+
+        int id = wifiManager.addNetwork(config);
+        wifiLog("Network ID: " + id);
+        if (id == -1) {
+            return false;
+        }
+
+        if (!wifiManager.saveConfiguration()) {
+            wifiLog("Couldn't save wifi config");
+            return false;
+        }
+        // We have to retrieve the WifiConfiguration after save
+        config = ConfigSecurities.getWifiConfiguration(wifiManager, config);
+        if (config == null) {
+            wifiLog("Error getting wifi config after save. (config == null)");
+            return false;
+        }
+
+        return connectToConfiguredNetwork(wifiManager, config, true);
+    }
+
+    @RequiresPermission(allOf = {ACCESS_FINE_LOCATION, ACCESS_WIFI_STATE})
+    private static boolean connectPreAndroidQ(@NonNull final Context context, @Nullable final WifiManager wifiManager, @NonNull final String mSsid, @NonNull final String password) {
+        if (wifiManager == null) {
+            return false;
+        }
+
+        WifiConfiguration config = ConfigSecurities.getWifiConfiguration(wifiManager, mSsid);
+        if (config != null && password.isEmpty()) {
+            wifiLog("PASSWORD WAS EMPTY. TRYING TO CONNECT TO EXISTING NETWORK CONFIGURATION");
+            return connectToConfiguredNetwork(wifiManager, config, true);
+        }
+
+        if (!cleanPreviousConfiguration(wifiManager, config)) {
+            wifiLog("COULDN'T REMOVE PREVIOUS CONFIG, CONNECTING TO EXISTING ONE");
+            return connectToConfiguredNetwork(wifiManager, config, true);
+        }
+
+        if (password.isEmpty()) {
+            checkForExcessOpenNetworkAndSave(context.getContentResolver(), wifiManager);
+        }
+
+        config = new WifiConfiguration();
+        config.SSID = convertToQuotedString(mSsid);
+        ConfigSecurities.setupSecurity(config, password);
 
         int id = wifiManager.addNetwork(config);
         wifiLog("Network ID: " + id);
@@ -383,6 +461,82 @@ public final class ConnectorUtils {
         return true;
     }
 
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private static boolean connectAndroidQ(@Nullable WifiManager wifiManager, @Nullable ConnectivityManager connectivityManager, @NonNull WeakHandler handler, @NonNull WifiConnectionCallback wifiConnectionCallback, @NonNull String mSsid, @NonNull String password) {
+        if (connectivityManager == null) {
+            return false;
+        }
+
+        WifiNetworkSpecifier.Builder wifiNetworkSpecifierBuilder = new WifiNetworkSpecifier.Builder()
+                .setSsid(mSsid);
+        if (!password.isEmpty()) {
+            wifiNetworkSpecifierBuilder.setWpa2Passphrase(password);
+        }
+
+        final NetworkRequest networkRequest = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .setNetworkSpecifier(wifiNetworkSpecifierBuilder.build())
+                .build();
+
+        // cleanup previous connections just in case
+        DisconnectCallbackHolder.getInstance().disconnect();
+
+        final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                super.onAvailable(network);
+
+                wifiLog("AndroidQ+ connected to wifi ");
+
+                // TODO: should this actually be in the success listener on WifiUtils?
+                // We could pass the networkrequest maybe?
+
+                // bind so all api calls are performed over this new network
+                // if we don't bind, connection with the wifi network is immediately dropped
+                DisconnectCallbackHolder.getInstance().bindProcessToNetwork(network);
+
+                // On some Android 10 devices, connection is made and than immediately lost due to a firmware bug,
+                // read more here: https://github.com/ThanosFisherman/WifiUtils/issues/63.
+                handler.postDelayed(() -> {
+                    if (isAlreadyConnectedSSID(wifiManager, mSsid)) {
+                        wifiConnectionCallback.successfulConnect();
+                    } else {
+                        wifiConnectionCallback.errorConnect(ConnectionErrorCode.ANDROID_10_IMMEDIATELY_DROPPED_CONNECTION);
+                    }
+                }, 500);
+            }
+
+            @Override
+            public void onUnavailable() {
+                super.onUnavailable();
+
+                wifiLog("AndroidQ+ could not connect to wifi");
+
+                wifiConnectionCallback.errorConnect(ConnectionErrorCode.USER_CANCELLED);
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                super.onLost(network);
+
+                wifiLog("onLost");
+
+                // cancel connecting if needed, this prevents 'request loops' on some oneplus/redmi phones
+                DisconnectCallbackHolder.getInstance().unbindProcessFromNetwork();
+                DisconnectCallbackHolder.getInstance().disconnect();
+
+            }
+        };
+
+        DisconnectCallbackHolder.getInstance().addNetworkCallback(networkCallback, connectivityManager);
+
+        wifiLog("connecting with Android 10");
+        DisconnectCallbackHolder.getInstance().requestNetwork(networkRequest);
+
+        return true;
+    }
+
     private static boolean disableAllButOne(@Nullable final WifiManager wifiManager, @Nullable final WifiConfiguration config) {
         if (wifiManager == null) {
             return false;
@@ -442,6 +596,24 @@ public final class ConnectorUtils {
         boolean result = false;
         for (WifiConfiguration wifiConfig : configurations)
             if (Objects.equals(scanResult.BSSID, wifiConfig.BSSID) && Objects.equals(scanResult.SSID, trimQuotes(wifiConfig.SSID))) {
+                result = wifiManager.enableNetwork(wifiConfig.networkId, true);
+                break;
+            }
+        wifiLog("reEnableNetworkIfPossible " + result);
+        return result;
+    }
+
+    public static boolean reEnableNetworkIfPossible(@Nullable final WifiManager wifiManager, @Nullable final String ssid) {
+        if (wifiManager == null) {
+            return false;
+        }
+        @Nullable final List<WifiConfiguration> configurations = wifiManager.getConfiguredNetworks();
+        if (configurations == null || ssid == null || configurations.isEmpty()) {
+            return false;
+        }
+        boolean result = false;
+        for (WifiConfiguration wifiConfig : configurations)
+            if (Objects.equals(ssid, trimQuotes(wifiConfig.SSID.replace("\"","")))) {
                 result = wifiManager.enableNetwork(wifiConfig.networkId, true);
                 break;
             }

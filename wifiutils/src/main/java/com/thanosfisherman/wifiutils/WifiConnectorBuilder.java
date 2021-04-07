@@ -18,6 +18,7 @@ import androidx.annotation.RequiresApi;
 public interface WifiConnectorBuilder {
     void start();
     void startWithoutScan(ScanResult scanResult);
+    void startWithoutScan();
 
     interface WifiUtilsBuilder {
         void enableWifi(WifiStateListener wifiStateListener);

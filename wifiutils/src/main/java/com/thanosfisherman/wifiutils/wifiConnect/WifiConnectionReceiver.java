@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 
 import static com.thanosfisherman.elvis.Elvis.of;
 import static com.thanosfisherman.wifiutils.ConnectorUtils.isAlreadyConnected;
+import static com.thanosfisherman.wifiutils.ConnectorUtils.isAlreadyConnectedSSID;
 import static com.thanosfisherman.wifiutils.ConnectorUtils.reEnableNetworkIfPossible;
 import static com.thanosfisherman.wifiutils.WifiUtils.wifiLog;
 import static com.thanosfisherman.wifiutils.utils.VersionUtils.isAndroidQOrLater;
@@ -26,6 +27,8 @@ public final class WifiConnectionReceiver extends BroadcastReceiver {
     private final WifiConnectionCallback mWifiConnectionCallback;
     @Nullable
     private ScanResult mScanResult;
+    @NonNull
+    private String mSsid = "";
     @NonNull
     private final WifiManager mWifiManager;
 
@@ -56,9 +59,14 @@ public final class WifiConnectionReceiver extends BroadcastReceiver {
                     Note here we don't check if has internet connectivity, because we only validate
                     if the connection to the hotspot is active, and not if the hotspot has internet.
                  */
-                if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
-
-                    mWifiConnectionCallback.successfulConnect();
+                if (mScanResult != null){
+                    if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
+                        mWifiConnectionCallback.successfulConnect();
+                    }
+                } else {
+                    if (isAlreadyConnectedSSID(mWifiManager, mSsid)) {
+                        mWifiConnectionCallback.successfulConnect();
+                    }
                 }
             } else if (Objects.equals(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION, action)) {
                 final SupplicantState state = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
@@ -95,6 +103,12 @@ public final class WifiConnectionReceiver extends BroadcastReceiver {
     public WifiConnectionReceiver connectWith(@NonNull ScanResult result, @NonNull String password, @NonNull ConnectivityManager connectivityManager) {
         mScanResult = result;
 
+        return this;
+    }
+
+    @NonNull
+    public WifiConnectionReceiver connectWith(@NonNull String ssid, @NonNull String password, @NonNull ConnectivityManager connectivityManager) {
+        mSsid = ssid;
         return this;
     }
 }
