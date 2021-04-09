@@ -65,7 +65,8 @@ class MainActivity : AppCompatActivity() {
     private fun connectWithWpa(context: Context) {
         WifiUtils.withContext(context)
                 .connectWith(SSID, PASSWORD)
-                .setTimeout(40000)
+                .setTimeout(10000)
+                .setNumberRetry(5)
                 .onConnectionResult(object : ConnectionSuccessListener {
                     override fun failed(errorCode: ConnectionErrorCode) {
                         Toast.makeText(context, "EPIC FAIL!$errorCode", Toast.LENGTH_SHORT).show()
@@ -84,7 +85,8 @@ class MainActivity : AppCompatActivity() {
     private fun connectWithWpaWithoutScan(context: Context) {
         WifiUtils.withContext(context)
                 .connectWith(SSID, PASSWORD)
-                .setTimeout(40000)
+                .setNumberRetry(5)
+                .setTimeout(10000)
                 .onConnectionResult(object : ConnectionSuccessListener {
                     //                    override fun success() {
 //                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()

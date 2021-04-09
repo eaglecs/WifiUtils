@@ -58,6 +58,8 @@ public interface WifiConnectorBuilder {
 
     interface WifiSuccessListener {
         @NonNull
+        WifiSuccessListener setNumberRetry(@NonNull int numberRetry);
+        @NonNull
         WifiSuccessListener setTimeout(long timeOutMillis);
 
         @NonNull

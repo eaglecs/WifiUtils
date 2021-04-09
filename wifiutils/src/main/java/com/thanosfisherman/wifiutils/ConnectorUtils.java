@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.MacAddress;
 import android.net.Network;
@@ -244,7 +245,7 @@ public final class ConnectorUtils {
         }
 
         if (isAndroidQOrLater()) {
-            return connectAndroidQ(wifiManager, connectivityManager, handler, wifiConnectionCallback, mSsid, password);
+            return connectAndroidQ(context, wifiManager, connectivityManager, handler, wifiConnectionCallback, mSsid, password);
         }
 
         return connectPreAndroidQ(context, wifiManager, mSsid, password);
@@ -463,13 +464,19 @@ public final class ConnectorUtils {
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private static boolean connectAndroidQ(@Nullable WifiManager wifiManager, @Nullable ConnectivityManager connectivityManager, @NonNull WeakHandler handler, @NonNull WifiConnectionCallback wifiConnectionCallback, @NonNull String mSsid, @NonNull String password) {
+    private static boolean connectAndroidQ(@NonNull Context context, @Nullable WifiManager wifiManager, @Nullable ConnectivityManager connectivityManager, @NonNull WeakHandler handler, @NonNull WifiConnectionCallback wifiConnectionCallback, @NonNull String mSsid, @NonNull String password) {
         if (connectivityManager == null) {
             return false;
         }
 
         WifiNetworkSpecifier.Builder wifiNetworkSpecifierBuilder = new WifiNetworkSpecifier.Builder()
                 .setSsid(mSsid);
+        String ssidSaved = getSsid(context);
+        String bssidSaved = getBssid(context);
+        if(!ssidSaved.isEmpty() && !bssidSaved.isEmpty() && ssidSaved.equals(mSsid)){
+            wifiNetworkSpecifierBuilder.setBssid(MacAddress.fromString(bssidSaved));
+        }
+
         if (!password.isEmpty()) {
             wifiNetworkSpecifierBuilder.setWpa2Passphrase(password);
         }
@@ -500,6 +507,9 @@ public final class ConnectorUtils {
                 // read more here: https://github.com/ThanosFisherman/WifiUtils/issues/63.
                 handler.postDelayed(() -> {
                     if (isAlreadyConnectedSSID(wifiManager, mSsid)) {
+                        String bssid = wifiManager.getConnectionInfo().getBSSID();
+                        saveBssidAndSsid(context,mSsid,bssid);
+                        wifiNetworkSpecifierBuilder.setBssid(MacAddress.fromString(bssid));
                         wifiConnectionCallback.successfulConnect();
                     } else {
                         wifiConnectionCallback.errorConnect(ConnectionErrorCode.ANDROID_10_IMMEDIATELY_DROPPED_CONNECTION);
@@ -613,7 +623,7 @@ public final class ConnectorUtils {
         }
         boolean result = false;
         for (WifiConfiguration wifiConfig : configurations)
-            if (Objects.equals(ssid, trimQuotes(wifiConfig.SSID.replace("\"","")))) {
+            if (Objects.equals(ssid, trimQuotes(wifiConfig.SSID.replace("\"", "")))) {
                 result = wifiManager.enableNetwork(wifiConfig.networkId, true);
                 break;
             }
@@ -786,5 +796,25 @@ public final class ConnectorUtils {
             }
         }
         return null;
+    }
+
+    @NonNull
+    private static void saveBssidAndSsid(@NonNull Context context,@NonNull String ssid,@NonNull String bssid) {
+        SharedPreferences.Editor editor = context.getSharedPreferences("MY_PREFS_BSSID", Context.MODE_PRIVATE).edit();
+        editor.putString("ssid", ssid);
+        editor.putString("bssid", bssid);
+        editor.apply();
+    }
+
+    @NonNull
+    private static String getBssid(@NonNull Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("MY_PREFS_BSSID", Context.MODE_PRIVATE);
+        return java.util.Objects.requireNonNull(prefs.getString("bssid", ""));
+    }
+
+    @NonNull
+    private static String getSsid(@NonNull Context context) {
+        SharedPreferences prefs = context.getSharedPreferences("MY_PREFS_BSSID", Context.MODE_PRIVATE);
+        return java.util.Objects.requireNonNull(prefs.getString("ssid", ""));
     }
 }

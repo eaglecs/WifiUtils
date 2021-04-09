@@ -15,42 +15,72 @@ import static com.thanosfisherman.wifiutils.WifiUtils.wifiLog;
 import static com.thanosfisherman.wifiutils.utils.VersionUtils.isAndroidQOrLater;
 
 public class TimeoutHandler {
-    private final WifiManager mWifiManager;
-    private final WeakHandler mHandler;
-    private final WifiConnectionCallback mWifiConnectionCallback;
+    private WifiManager mWifiManager;
+    private WeakHandler mHandler;
+    private WifiConnectionCallback mWifiConnectionCallback;
     private ScanResult mScanResult;
     private String mSsid;
-
-    private final Runnable timeoutCallback = new Runnable() {
-        @Override
-        public void run() {
-            wifiLog("Connection Timed out...");
-
-            if (mScanResult != null){
-                if (!isAndroidQOrLater()) {
-                    reEnableNetworkIfPossible(mWifiManager, mScanResult);
-                }
-                if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
-                    mWifiConnectionCallback.successfulConnect();
-                } else {
-                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
-                }
+    private Runnable timeoutCallback = () -> {
+        wifiLog("Connection Timed out...");
+        if (mWifiManager == null){
+            if (mWifiConnectionCallback == null){
+                return;
             } else  {
-                if (!isAndroidQOrLater()) {
-                    reEnableNetworkIfPossible(mWifiManager, mSsid);
-                }
-                if (isAlreadyConnectedSSID(mWifiManager, mSsid)) {
-                    mWifiConnectionCallback.successfulConnect();
-                } else {
-                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
-                }
+                mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
             }
-
-
-
-            mHandler.removeCallbacks(this);
         }
+        if (mScanResult != null) {
+            if (!isAndroidQOrLater()) {
+                reEnableNetworkIfPossible(mWifiManager, mScanResult);
+            }
+            if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
+                mWifiConnectionCallback.successfulConnect();
+            } else {
+                mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
+            }
+        } else {
+            if (!isAndroidQOrLater()) {
+                reEnableNetworkIfPossible(mWifiManager, mSsid);
+            }
+            if (isAlreadyConnectedSSID(mWifiManager, mSsid)) {
+                mWifiConnectionCallback.successfulConnect();
+            } else {
+                mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
+            }
+        }
+//            mHandler.removeCallbacks(this);
     };
+
+//    private Runnable timeoutCallback = new Runnable() {
+//        @Override
+//        public void run() {
+//            wifiLog("Connection Timed out...");
+//
+//            if (mScanResult != null){
+//                if (!isAndroidQOrLater()) {
+//                    reEnableNetworkIfPossible(mWifiManager, mScanResult);
+//                }
+//                if (isAlreadyConnected(mWifiManager, of(mScanResult).next(scanResult -> scanResult.BSSID).get())) {
+//                    mWifiConnectionCallback.successfulConnect();
+//                } else {
+//                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
+//                }
+//            } else  {
+//                if (!isAndroidQOrLater()) {
+//                    reEnableNetworkIfPossible(mWifiManager, mSsid);
+//                }
+//                if (isAlreadyConnectedSSID(mWifiManager, mSsid)) {
+//                    mWifiConnectionCallback.successfulConnect();
+//                } else {
+//                    mWifiConnectionCallback.errorConnect(ConnectionErrorCode.TIMEOUT_OCCURRED);
+//                }
+//            }
+//
+//
+//
+//            mHandler.removeCallbacks(this);
+//        }
+//    };
 
     public TimeoutHandler(@NonNull WifiManager wifiManager, @NonNull WeakHandler handler, @NonNull final WifiConnectionCallback wifiConnectionCallback) {
         this.mWifiManager = wifiManager;

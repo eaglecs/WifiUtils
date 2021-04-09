@@ -98,6 +98,10 @@ public final class WifiUtils implements WifiConnectorBuilder,
     private WifiStateListener mWifiStateListener;
     @Nullable
     private ConnectionWpsListener mConnectionWpsListener;
+    @NonNull
+    private int mNumberRetry = 0;
+    @NonNull
+    private int mNumberRetryCurrent = 0;
 
     @NonNull
     private final WifiStateCallback mWifiStateCallback = new WifiStateCallback() {
@@ -106,7 +110,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
             wifiLog("WIFI ENABLED...");
             unregisterReceiver(mContext, mWifiStateReceiver);
             of(mWifiStateListener).ifPresent(stateListener -> stateListener.isSuccess(true));
-            if (isScanWifi){
+            if (isScanWifi) {
                 if (mScanResultsListener != null || mPassword != null) {
                     wifiLog("START SCANNING....");
                     if (mWifiManager.startScan()) {
@@ -119,7 +123,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
                     }
                 }
             } else {
-                if (mSingleScanResult != null){
+                if (mSingleScanResult != null) {
                     if (connectToWifi(mContext, mWifiManager, mConnectivityManager, mHandler, mSingleScanResult, mPassword, mWifiConnectionCallback)) {
                         registerReceiver(mContext, (mWifiConnectionReceiver).connectWith(mSingleScanResult, mPassword, mConnectivityManager),
                                 new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
@@ -153,13 +157,11 @@ public final class WifiUtils implements WifiConnectorBuilder,
             unregisterReceiver(mContext, mWifiScanReceiver);
 
             final List<ScanResult> scanResultList = mWifiManager.getScanResults();
-            if (BuildConfig.DEBUG){
-                if (scanResultList.isEmpty()){
-                    wifiLog( "List wifi isEmpty ");
-                } else {
-                    for (Iterator<ScanResult> i = scanResultList.iterator(); i.hasNext();) {
-                        wifiLog( "Wifi - " + i.next().SSID);
-                    }
+            if (scanResultList.isEmpty()) {
+                wifiLog("List wifi isEmpty ");
+            } else {
+                for (Iterator<ScanResult> i = scanResultList.iterator(); i.hasNext(); ) {
+                    wifiLog("Wifi - " + i.next().SSID);
                 }
             }
             of(mScanResultsListener).ifPresent(resultsListener -> resultsListener.onScanResults(scanResultList));
@@ -208,29 +210,42 @@ public final class WifiUtils implements WifiConnectorBuilder,
             wifiLog("CONNECTED SUCCESSFULLY");
             unregisterReceiver(mContext, mWifiConnectionReceiver);
             mTimeoutHandler.stopTimeout();
-
-            //reenableAllHotspots(mWifiManager);
-//            of(mConnectionSuccessListener).ifPresent(ConnectionSuccessListener::success);
-            of(mConnectionSuccessListener).ifPresent( successListener -> {
+            of(mConnectionSuccessListener).ifPresent(successListener -> {
                 successListener.success(mSingleScanResult);
             });
         }
 
         @Override
         public void errorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
-            wifiLog("ConnectionErrorCode " + connectionErrorCode);
-            unregisterReceiver(mContext, mWifiConnectionReceiver);
-            mTimeoutHandler.stopTimeout();
-            if (isAndroidQOrLater()) {
-                DisconnectCallbackHolder.getInstance().disconnect();
+            if (connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry){
+                mNumberRetryCurrent += 1;
+                wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
+                if (isScanWifi){
+                    start();
+                } else {
+                    if (mSingleScanResult != null){
+                        startWithoutScan(mSingleScanResult);
+                    } else  {
+                        startWithoutScan();
+                    }
+                }
+            } else {
+                wifiLog("ConnectionErrorCode " + connectionErrorCode);
+                unregisterReceiver(mContext, mWifiConnectionReceiver);
+                mTimeoutHandler.stopTimeout();
+                if (isAndroidQOrLater()) {
+                    DisconnectCallbackHolder.getInstance().disconnect();
+                }
+                reenableAllHotspots(mWifiManager);
+                //if (mSingleScanResult != null)
+                //cleanPreviousConfiguration(mWifiManager, mSingleScanResult);
+                of(mConnectionSuccessListener).ifPresent(successListener -> {
+                    successListener.failed(connectionErrorCode);
+                    wifiLog("DIDN'T CONNECT TO WIFI " + connectionErrorCode);
+                });
             }
-            reenableAllHotspots(mWifiManager);
-            //if (mSingleScanResult != null)
-            //cleanPreviousConfiguration(mWifiManager, mSingleScanResult);
-            of(mConnectionSuccessListener).ifPresent(successListener -> {
-                successListener.failed(connectionErrorCode);
-                wifiLog("DIDN'T CONNECT TO WIFI " + connectionErrorCode);
-            });
+
+
         }
     };
 
@@ -356,7 +371,11 @@ public final class WifiUtils implements WifiConnectorBuilder,
             if (removeWifi(mWifiManager, ssid)) {
                 removeSuccessListener.success();
             } else {
-                removeSuccessListener.failed(RemoveErrorCode.COULD_NOT_REMOVE);
+                if (disconnectFromWifi(mWifiManager)) {
+                    removeSuccessListener.success();
+                } else {
+                    removeSuccessListener.failed(RemoveErrorCode.COULD_NOT_REMOVE);
+                }
             }
         }
     }
@@ -417,6 +436,13 @@ public final class WifiUtils implements WifiConnectorBuilder,
 
     @NonNull
     @Override
+    public WifiSuccessListener setNumberRetry(@NonNull int numberRetry) {
+        mNumberRetry = numberRetry;
+        return this;
+    }
+
+    @NonNull
+    @Override
     public WifiSuccessListener setTimeout(final long timeOutMillis) {
         mTimeoutMillis = timeOutMillis;
         return this;
@@ -457,7 +483,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
     @Override
     public void startWithoutScan(ScanResult scanResult) {
         isScanWifi = false;
-        mSingleScanResult =  scanResult;
+        mSingleScanResult = scanResult;
         unregisterReceiver(mContext, mWifiStateReceiver);
         unregisterReceiver(mContext, mWifiScanReceiver);
         unregisterReceiver(mContext, mWifiConnectionReceiver);
