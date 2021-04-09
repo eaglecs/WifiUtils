@@ -129,7 +129,9 @@ public final class WifiUtils implements WifiConnectorBuilder,
                                 new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                         registerReceiver(mContext, mWifiConnectionReceiver,
                                 new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-                        mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
+                        if (!isAndroidQOrLater()) {
+                            mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
+                        }
                     } else {
                         mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                     }
@@ -139,7 +141,9 @@ public final class WifiUtils implements WifiConnectorBuilder,
                                 new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                         registerReceiver(mContext, mWifiConnectionReceiver,
                                 new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-                        mTimeoutHandler.startTimeout(mSsid, mTimeoutMillis);
+                        if (!isAndroidQOrLater()) {
+                            mTimeoutHandler.startTimeout(mSsid, mTimeoutMillis);
+                        }
                     } else {
                         mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                     }
@@ -193,7 +197,9 @@ public final class WifiUtils implements WifiConnectorBuilder,
                             new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                     registerReceiver(mContext, mWifiConnectionReceiver,
                             new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-                    mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
+                    if (!isAndroidQOrLater()) {
+                        mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
+                    }
                 } else {
                     mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                 }
@@ -217,15 +223,15 @@ public final class WifiUtils implements WifiConnectorBuilder,
 
         @Override
         public void errorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
-            if (connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry){
+            if (connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry) {
                 mNumberRetryCurrent += 1;
                 wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
-                if (isScanWifi){
+                if (isScanWifi) {
                     start();
                 } else {
-                    if (mSingleScanResult != null){
+                    if (mSingleScanResult != null) {
                         startWithoutScan(mSingleScanResult);
-                    } else  {
+                    } else {
                         startWithoutScan();
                     }
                 }

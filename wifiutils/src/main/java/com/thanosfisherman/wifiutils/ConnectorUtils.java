@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.Network;
 import android.net.NetworkCapabilities;

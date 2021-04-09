@@ -23,11 +23,11 @@ class MainActivity : AppCompatActivity() {
 //    private val SSID = "OLLI-Public"
 //    private val PASSWORD = "olli-ai2020"
 
-//    private val SSID = "MAIKA-9683"
-//    private val PASSWORD = ""
+    private val SSID = "MAIKA-9683"
+    private val PASSWORD = ""
 
-    private val SSID = "smarthome"
-    private val PASSWORD = "a1234567890"
+//    private val SSID = "smarthome"
+//    private val PASSWORD = "a1234567890"
 
     private var isConnectedToInternet = false
 
@@ -54,8 +54,8 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun checkInternet(context: Context){
-        if (isConnectedToInternet){
+    private fun checkInternet(context: Context) {
+        if (isConnectedToInternet) {
             Toast.makeText(context, "has internet!", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "no internet!", Toast.LENGTH_SHORT).show()
