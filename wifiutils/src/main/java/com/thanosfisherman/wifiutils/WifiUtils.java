@@ -223,7 +223,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
 
         @Override
         public void errorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
-            if (connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry) {
+            if (!isAndroidQOrLater() && connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry) {
                 mNumberRetryCurrent += 1;
                 wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
                 if (isScanWifi) {
