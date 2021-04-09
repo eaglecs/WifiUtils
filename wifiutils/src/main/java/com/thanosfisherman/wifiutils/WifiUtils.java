@@ -4,9 +4,11 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.text.format.Formatter;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -213,12 +215,42 @@ public final class WifiUtils implements WifiConnectorBuilder,
     private final WifiConnectionCallback mWifiConnectionCallback = new WifiConnectionCallback() {
         @Override
         public void successfulConnect() {
-            wifiLog("CONNECTED SUCCESSFULLY");
-            unregisterReceiver(mContext, mWifiConnectionReceiver);
-            mTimeoutHandler.stopTimeout();
-            of(mConnectionSuccessListener).ifPresent(successListener -> {
-                successListener.success(mSingleScanResult);
-            });
+            DhcpInfo dhcpInfo = mWifiManager.getDhcpInfo();
+            String gateway = Formatter.formatIpAddress(dhcpInfo.gateway);
+            wifiLog("IP Address: " + gateway);
+            if (gateway.isEmpty() || gateway.equals("0.0.0.0")){
+                if (!isAndroidQOrLater() && mNumberRetryCurrent < mNumberRetry) {
+                    mNumberRetryCurrent += 1;
+                    wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
+                    if (isScanWifi) {
+                        start();
+                    } else {
+                        if (mSingleScanResult != null) {
+                            startWithoutScan(mSingleScanResult);
+                        } else {
+                            startWithoutScan();
+                        }
+                    }
+                } else  {
+                    remove(mSsid, new RemoveSuccessListener(){
+                        @Override
+                        public void success() {
+                            showErrorConnect(ConnectionErrorCode.GET_GATEWAY_FAIL);
+                        }
+                        @Override
+                        public void failed(@NonNull RemoveErrorCode errorCode) {
+                            showErrorConnect(ConnectionErrorCode.GET_GATEWAY_FAIL);
+                        }
+                    });
+                }
+            } else {
+                wifiLog("CONNECTED SUCCESSFULLY");
+                unregisterReceiver(mContext, mWifiConnectionReceiver);
+                mTimeoutHandler.stopTimeout();
+                of(mConnectionSuccessListener).ifPresent(successListener -> {
+                    successListener.success(mSingleScanResult, gateway);
+                });
+            }
         }
 
         @Override
@@ -236,24 +268,28 @@ public final class WifiUtils implements WifiConnectorBuilder,
                     }
                 }
             } else {
-                wifiLog("ConnectionErrorCode " + connectionErrorCode);
-                unregisterReceiver(mContext, mWifiConnectionReceiver);
-                mTimeoutHandler.stopTimeout();
-                if (isAndroidQOrLater()) {
-                    DisconnectCallbackHolder.getInstance().disconnect();
-                }
-                reenableAllHotspots(mWifiManager);
-                //if (mSingleScanResult != null)
-                //cleanPreviousConfiguration(mWifiManager, mSingleScanResult);
-                of(mConnectionSuccessListener).ifPresent(successListener -> {
-                    successListener.failed(connectionErrorCode);
-                    wifiLog("DIDN'T CONNECT TO WIFI " + connectionErrorCode);
-                });
+                showErrorConnect(connectionErrorCode);
             }
 
 
         }
     };
+
+    private void showErrorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
+        wifiLog("ConnectionErrorCode " + connectionErrorCode);
+        unregisterReceiver(mContext, mWifiConnectionReceiver);
+        mTimeoutHandler.stopTimeout();
+        if (isAndroidQOrLater()) {
+            DisconnectCallbackHolder.getInstance().disconnect();
+        }
+        reenableAllHotspots(mWifiManager);
+        //if (mSingleScanResult != null)
+        //cleanPreviousConfiguration(mWifiManager, mSingleScanResult);
+        of(mConnectionSuccessListener).ifPresent(successListener -> {
+            successListener.failed(connectionErrorCode);
+            wifiLog("DIDN'T CONNECT TO WIFI " + connectionErrorCode);
+        });
+    }
 
     private WifiUtils(@NonNull Context context) {
         mContext = context;

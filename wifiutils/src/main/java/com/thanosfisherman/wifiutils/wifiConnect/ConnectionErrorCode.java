@@ -40,7 +40,7 @@ public enum ConnectionErrorCode {
     USER_CANCELLED,
     COULD_NOT_CONNECT,
     /**
-     * Connect wifi without scan wifi, but scan result is null.
+     * Not get gateway of wifi.
      */
-    SCAN_RESULT_NULL,
+    GET_GATEWAY_FAIL,
 }

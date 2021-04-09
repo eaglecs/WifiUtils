@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(context, "EPIC FAIL!$errorCode", Toast.LENGTH_SHORT).show()
                     }
 
-                    override fun success(mScanResult: ScanResult?) {
+                    override fun success(mScanResult: ScanResult?, gateway: String) {
                         scanResult = mScanResult
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
                     }
@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
                     //                    override fun success() {
 //                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
 //                    }
-                    override fun success(mScanResult: ScanResult?) {
+                    override fun success(mScanResult: ScanResult?, gateway: String) {
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
                     }
 
