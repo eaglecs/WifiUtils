@@ -133,9 +133,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
                                 new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                         registerReceiver(mContext, mWifiConnectionReceiver,
                                 new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-                        if (!isAndroidQOrLater()) {
-                            mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
-                        }
+                        mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
                     } else {
                         mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                     }
@@ -145,9 +143,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
                                 new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                         registerReceiver(mContext, mWifiConnectionReceiver,
                                 new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-                        if (!isAndroidQOrLater()) {
-                            mTimeoutHandler.startTimeout(mSsid, mTimeoutMillis);
-                        }
+                        mTimeoutHandler.startTimeout(mSsid, mTimeoutMillis);
                     } else {
                         mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                     }
@@ -201,9 +197,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
                             new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION));
                     registerReceiver(mContext, mWifiConnectionReceiver,
                             new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-                    if (!isAndroidQOrLater()) {
-                        mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
-                    }
+                    mTimeoutHandler.startTimeout(mSingleScanResult, mTimeoutMillis);
                 } else {
                     mWifiConnectionCallback.errorConnect(ConnectionErrorCode.COULD_NOT_CONNECT);
                 }

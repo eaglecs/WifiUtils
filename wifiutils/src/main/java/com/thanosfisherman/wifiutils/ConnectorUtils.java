@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
-import android.net.LinkProperties;
 import android.net.MacAddress;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -808,13 +807,13 @@ public final class ConnectorUtils {
     }
 
     @NonNull
-    private static String getBssid(@NonNull Context context) {
+    public static String getBssid(@NonNull Context context) {
         SharedPreferences prefs = context.getSharedPreferences("MY_PREFS_BSSID", Context.MODE_PRIVATE);
         return java.util.Objects.requireNonNull(prefs.getString("bssid", ""));
     }
 
     @NonNull
-    private static String getSsid(@NonNull Context context) {
+    public static String getSsid(@NonNull Context context) {
         SharedPreferences prefs = context.getSharedPreferences("MY_PREFS_BSSID", Context.MODE_PRIVATE);
         return java.util.Objects.requireNonNull(prefs.getString("ssid", ""));
     }

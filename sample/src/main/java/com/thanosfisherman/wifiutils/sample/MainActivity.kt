@@ -2,6 +2,7 @@ package com.thanosfisherman.wifiutils.sample
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.net.wifi.ScanResult
 import android.os.Bundle
 import android.util.Log
@@ -9,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.thanosfisherman.wifiutils.WifiUtils
+import com.thanosfisherman.wifiutils.utils.VersionUtils
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionSuccessListener
 import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionErrorCode
@@ -44,8 +46,7 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET,
                 Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE), 555)
         WifiUtils.forwardLog { _, tag, message ->
-            val customTag = "${tag}.${this::class.simpleName}"
-            Log.i(customTag, message)
+            Log.d("ducanh_$tag", message)
         }
         WifiUtils.enableLog(true)
         textview_ssid.text = SSID
@@ -90,19 +91,24 @@ class MainActivity : AppCompatActivity() {
     private var isReconnect = false
 
     private fun connectWithWpaWithoutScan(context: Context) {
+        val numRetry = if (VersionUtils.isAndroidQOrLater()){
+            0
+        } else {
+            1
+        }
         WifiUtils.withContext(context)
                 .connectWith(SSID, PASSWORD)
-                .setNumberRetry(5)
+                .setNumberRetry(numRetry)
                 .setTimeout(10000)
                 .onConnectionResult(object : ConnectionSuccessListener {
                     override fun success(mScanResult: ScanResult?, gateway: String) {
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
-                        if (isReconnect){
-                            isReconnect = false
-                        } else {
-                            isReconnect = true
-                            connectWithWpaWithoutScan(context)
-                        }
+//                        if (isReconnect){
+//                            isReconnect = false
+//                        } else {
+//                            isReconnect = true
+//                            connectWithWpaWithoutScan(context)
+//                        }
                     }
 
                     override fun failed(errorCode: ConnectionErrorCode) {
@@ -141,5 +147,10 @@ class MainActivity : AppCompatActivity() {
     private fun check(context: Context) {
         val result = WifiUtils.withContext(context).isWifiConnected(SSID)
         Toast.makeText(context, "Wifi Connect State: $result", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.d("duc_anh","onActivityResult")
     }
 }
