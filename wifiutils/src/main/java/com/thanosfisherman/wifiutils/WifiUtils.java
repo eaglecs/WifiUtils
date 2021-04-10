@@ -8,6 +8,7 @@ import android.net.DhcpInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.Handler;
 import android.text.format.Formatter;
 import android.util.Log;
 
@@ -60,6 +61,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
         WifiConnectorBuilder.WifiWpsSuccessListener {
     private static final String TAG = WifiUtils.class.getSimpleName();
     private Boolean isScanWifi = true;
+    private Handler handler = new Handler();
 
     @Nullable
     private final WifiManager mWifiManager;
@@ -219,18 +221,8 @@ public final class WifiUtils implements WifiConnectorBuilder,
             String gateway = Formatter.formatIpAddress(dhcpInfo.gateway);
             wifiLog("IP Address: " + gateway);
             if (gateway.isEmpty() || gateway.equals("0.0.0.0")){
-                if (!isAndroidQOrLater() && mNumberRetryCurrent < mNumberRetry) {
-                    mNumberRetryCurrent += 1;
-                    wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
-                    if (isScanWifi) {
-                        start();
-                    } else {
-                        if (mSingleScanResult != null) {
-                            startWithoutScan(mSingleScanResult);
-                        } else {
-                            startWithoutScan();
-                        }
-                    }
+                if (mNumberRetryCurrent < mNumberRetry) {
+                    retryConnectWifi();
                 } else  {
                     remove(mSsid, new RemoveSuccessListener(){
                         @Override
@@ -255,9 +247,19 @@ public final class WifiUtils implements WifiConnectorBuilder,
 
         @Override
         public void errorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
-            if (!isAndroidQOrLater() && connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry) {
-                mNumberRetryCurrent += 1;
-                wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
+            if (connectionErrorCode != ConnectionErrorCode.AUTHENTICATION_ERROR_OCCURRED && mNumberRetryCurrent < mNumberRetry) {
+                retryConnectWifi();
+            } else {
+                showErrorConnect(connectionErrorCode);
+            }
+        }
+    };
+
+    private void retryConnectWifi() {
+        mNumberRetryCurrent += 1;
+        wifiLog("Retry connect number: " + mNumberRetryCurrent + " Total retry: " + mNumberRetry);
+        if (isAndroidQOrLater()){
+            handler.postDelayed(() -> {
                 if (isScanWifi) {
                     start();
                 } else {
@@ -267,13 +269,19 @@ public final class WifiUtils implements WifiConnectorBuilder,
                         startWithoutScan();
                     }
                 }
+            }, 2000);
+        } else {
+            if (isScanWifi) {
+                start();
             } else {
-                showErrorConnect(connectionErrorCode);
+                if (mSingleScanResult != null) {
+                    startWithoutScan(mSingleScanResult);
+                } else {
+                    startWithoutScan();
+                }
             }
-
-
         }
-    };
+    }
 
     private void showErrorConnect(@NonNull ConnectionErrorCode connectionErrorCode) {
         wifiLog("ConnectionErrorCode " + connectionErrorCode);

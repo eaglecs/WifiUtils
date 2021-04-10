@@ -23,7 +23,13 @@ class MainActivity : AppCompatActivity() {
 //    private val SSID = "OLLI-Public"
 //    private val PASSWORD = "olli-ai2020"
 
-    private val SSID = "MAIKA-9683"
+//    private val SSID = "MAIKA-9683"
+//    private val PASSWORD = ""
+
+//    private val SSID = "HCM"
+//    private val PASSWORD = "123trang"
+
+    private val SSID = "MAIKA-ADF7"
     private val PASSWORD = ""
 
 //    private val SSID = "smarthome"
@@ -81,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var scanResult: ScanResult? = null
+    private var isReconnect = false
 
     private fun connectWithWpaWithoutScan(context: Context) {
         WifiUtils.withContext(context)
@@ -88,11 +95,14 @@ class MainActivity : AppCompatActivity() {
                 .setNumberRetry(5)
                 .setTimeout(10000)
                 .onConnectionResult(object : ConnectionSuccessListener {
-                    //                    override fun success() {
-//                        Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
-//                    }
                     override fun success(mScanResult: ScanResult?, gateway: String) {
                         Toast.makeText(context, "SUCCESS!", Toast.LENGTH_SHORT).show()
+                        if (isReconnect){
+                            isReconnect = false
+                        } else {
+                            isReconnect = true
+                            connectWithWpaWithoutScan(context)
+                        }
                     }
 
                     override fun failed(errorCode: ConnectionErrorCode) {
