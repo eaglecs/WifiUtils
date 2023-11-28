@@ -1,15 +1,19 @@
 plugins {
     id(GradlePluginId.ANDROID_APPLICATION)
     id(GradlePluginId.KOTLIN_ANDROID)
-    id(GradlePluginId.KOTLIN_ANDROID_EXTENSIONS)
+//    id(GradlePluginId.KOTLIN_ANDROID_EXTENSIONS)
 }
 
 android {
-    compileSdkVersion(AndroidConfig.COMPILE_SDK_VERSION)
+    buildFeatures {
+        viewBinding = true
+    }
+    namespace = Artifact.ARTIFACT_GROUP + ".sample"
+    compileSdk= AndroidConfig.COMPILE_SDK_VERSION
     defaultConfig {
         applicationId = Artifact.ARTIFACT_GROUP + ".sample"
-        minSdkVersion(AndroidConfig.MIN_SDK_VERSION)
-        targetSdkVersion(AndroidConfig.TARGET_SDK_VERSION)
+        minSdk= AndroidConfig.MIN_SDK_VERSION
+        targetSdk = AndroidConfig.TARGET_SDK_VERSION
         versionCode = Artifact.VERSION_CODE
         versionName = Artifact.VERSION_NAME
         multiDexEnabled = true
@@ -52,8 +56,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

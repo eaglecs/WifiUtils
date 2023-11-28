@@ -757,14 +757,17 @@ public final class ConnectorUtils {
     }
 
     static void reenableAllHotspots(@Nullable WifiManager wifi) {
-        if (wifi == null) {
-            return;
-        }
-        final List<WifiConfiguration> configurations = wifi.getConfiguredNetworks();
-        if (configurations != null && !configurations.isEmpty()) {
-            for (final WifiConfiguration config : configurations) {
-                wifi.enableNetwork(config.networkId, false);
+        try{
+            if (wifi == null) {
+                return;
             }
+            final List<WifiConfiguration> configurations = wifi.getConfiguredNetworks();
+            if (configurations != null && !configurations.isEmpty()) {
+                for (final WifiConfiguration config : configurations) {
+                    wifi.enableNetwork(config.networkId, false);
+                }
+            }
+        } catch (Exception exception){
         }
     }
 

@@ -115,7 +115,7 @@ public final class WifiUtils implements WifiConnectorBuilder,
             unregisterReceiver(mContext, mWifiStateReceiver);
             of(mWifiStateListener).ifPresent(stateListener -> stateListener.isSuccess(true));
             if (isScanWifi) {
-                if (mScanResultsListener != null || mPassword != null) {
+                if (mWifiManager != null && (mScanResultsListener != null || mPassword != null)) {
                     wifiLog("START SCANNING....");
                     if (mWifiManager.startScan()) {
                         registerReceiver(mContext, mWifiScanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));

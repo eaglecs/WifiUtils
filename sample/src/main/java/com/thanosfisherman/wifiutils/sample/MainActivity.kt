@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.thanosfisherman.wifiutils.WifiUtils
+import com.thanosfisherman.wifiutils.sample.databinding.ActivityMainBinding
 import com.thanosfisherman.wifiutils.utils.VersionUtils
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionSuccessListener
@@ -17,11 +18,10 @@ import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionErrorCode
 import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionSuccessListener
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveErrorCode
 import com.thanosfisherman.wifiutils.wifiRemove.RemoveSuccessListener
-import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
-
+    private lateinit var binding: ActivityMainBinding
 //    private val SSID = "OLLI-Public"
 //    private val PASSWORD = "olli-ai2020"
 
@@ -42,21 +42,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET,
                 Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE), 555)
         WifiUtils.forwardLog { _, tag, message ->
             Log.d("ducanh_$tag", message)
         }
         WifiUtils.enableLog(true)
-        textview_ssid.text = SSID
-        textview_password.text = PASSWORD
-        button_connect.setOnClickListener { connectWithWpa(applicationContext) }
-        button_connect_without_scan.setOnClickListener { connectWithWpaWithoutScan(applicationContext) }
-        button_disconnect.setOnClickListener { disconnect(applicationContext) }
-        button_remove.setOnClickListener { remove(applicationContext) }
-        button_check.setOnClickListener { check(applicationContext) }
-        button_check_internet.setOnClickListener { checkInternet(applicationContext) }
+        binding.textviewSsid.text = SSID
+        binding.textviewPassword.text = PASSWORD
+        binding.buttonConnect.setOnClickListener { connectWithWpa(applicationContext) }
+        binding.buttonConnectWithoutScan.setOnClickListener { connectWithWpaWithoutScan(applicationContext) }
+        binding.buttonDisconnect.setOnClickListener { disconnect(applicationContext) }
+        binding.buttonRemove.setOnClickListener { remove(applicationContext) }
+        binding.buttonCheck.setOnClickListener { check(applicationContext) }
+        binding.buttonCheckInternet.setOnClickListener { checkInternet(applicationContext) }
 
     }
 
