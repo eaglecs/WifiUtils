@@ -20,13 +20,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-//    signingConfigs {
+    signingConfigs {
 //        getByName("debug") {
 //            storeFile = file("debug.keystore")
 //            storePassword = "android"
 //            keyAlias = "androiddebugkey"
 //            keyPassword = "android"
 //        }
+        register("release") {
+            storeFile = file("release.jks")
+            storePassword = "123456a@A"
+            keyAlias = "wifi_util"
+            keyPassword = "123456a@A"
+        }
 
 //        getByName("release") {
 //            storeFile = file("release.jks")
@@ -34,7 +40,7 @@ android {
 //            keyAlias = "wifi_util"
 //            keyPassword = "123456a@A"
 //        }
-//    }
+    }
 
     buildTypes {
 
@@ -47,7 +53,7 @@ android {
         }
 
         getByName(BuildType.RELEASE) {
-//            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = BuildTypeRelease.isMinifyEnabled
             isShrinkResources = BuildTypeRelease.isShrinkResources
             isDebuggable = BuildTypeRelease.isDebuggable
