@@ -24,39 +24,39 @@ allprojects {
     }
 }
 
-//tasks.withType<DependencyUpdatesTask> {
-//
-//    // Reject all non stable versions
-//    rejectVersionIf {
-//        isNonStable(candidate.version)
-//    }
-//
-//    // Disallow release candidates as upgradable versions from stable versions
-//    rejectVersionIf {
-//        isNonStable(candidate.version) && !isNonStable(currentVersion)
-//    }
-//
-//    // Using the full syntax
-//    resolutionStrategy {
-//        componentSelection {
-//            all {
-//                if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
-//                    reject("Release candidate")
-//                }
-//            }
-//        }
-//    }
-//
-//    // optional parameters
-//    checkForGradleUpdate = true
-//    outputFormatter = "json"
-//    outputDir = "build/dependencyUpdates"
-//    reportfileName = "report"
-//}
-//
-//fun isNonStable(version: String): Boolean {
-//    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.toUpperCase().contains(it) }
-//    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
-//    val isStable = stableKeyword || regex.matches(version)
-//    return isStable.not()
-//}
+tasks.withType<DependencyUpdatesTask> {
+
+    // Reject all non stable versions
+    rejectVersionIf {
+        isNonStable(candidate.version)
+    }
+
+    // Disallow release candidates as upgradable versions from stable versions
+    rejectVersionIf {
+        isNonStable(candidate.version) && !isNonStable(currentVersion)
+    }
+
+    // Using the full syntax
+    resolutionStrategy {
+        componentSelection {
+            all {
+                if (isNonStable(candidate.version) && !isNonStable(currentVersion)) {
+                    reject("Release candidate")
+                }
+            }
+        }
+    }
+
+    // optional parameters
+    checkForGradleUpdate = true
+    outputFormatter = "json"
+    outputDir = "build/dependencyUpdates"
+    reportfileName = "report"
+}
+
+fun isNonStable(version: String): Boolean {
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.toUpperCase().contains(it) }
+    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+    val isStable = stableKeyword || regex.matches(version)
+    return isStable.not()
+}
