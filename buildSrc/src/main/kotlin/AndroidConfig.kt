@@ -1,8 +1,8 @@
 object AndroidConfig {
-    const val COMPILE_SDK_VERSION = 33
+    const val COMPILE_SDK_VERSION = 35
     const val MIN_SDK_VERSION = 24
-    const val TARGET_SDK_VERSION = 33
-    const val BUILD_TOOLS_VERSION = "33.0.1"
+    const val TARGET_SDK_VERSION = 35
+    const val BUILD_TOOLS_VERSION = "35.0.0"
 
     const val TEST_INSTRUMENTATION_RUNNER = "android.support.test.runner.AndroidJUnitRunner"
 }

@@ -22,11 +22,11 @@ import com.thanosfisherman.wifiutils.wifiRemove.RemoveSuccessListener
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-//    private val SSID = "OLLI-Public"
-//    private val PASSWORD = "olli-ai2020"
+    private val SSID = "OLLI-Public"
+    private val PASSWORD = "olli-ai2020"
 
-    private val SSID = "MAIKA-9683"
-    private val PASSWORD = ""
+//    private val SSID = "MAIKA-9683"
+//    private val PASSWORD = ""
 
 //    private val SSID = "HCM"
 //    private val PASSWORD = "123trang"

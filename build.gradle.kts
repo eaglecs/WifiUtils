@@ -2,8 +2,13 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
+        maven ("https://plugins.gradle.org/m2/")
+        maven("https://www.jitpack.io")
+        maven("https://mvnrepository.com")
+        maven("https://jcenter.bintray.com")
         google()
+        mavenLocal()
     }
     dependencies {
 
@@ -19,8 +24,14 @@ plugins {
 allprojects {
 
     repositories {
-        jcenter()
+        mavenCentral()
+        maven ("https://plugins.gradle.org/m2/")
+        maven("https://www.jitpack.io")
+        maven("https://mvnrepository.com")
+        maven("https://jcenter.bintray.com")
         google()
+        mavenLocal()
+        gradlePluginPortal()
     }
 }
 
@@ -55,7 +66,7 @@ tasks.withType<DependencyUpdatesTask> {
 }
 
 fun isNonStable(version: String): Boolean {
-    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.toUpperCase().contains(it) }
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
     val regex = "^[0-9,.v-]+(-r)?$".toRegex()
     val isStable = stableKeyword || regex.matches(version)
     return isStable.not()
